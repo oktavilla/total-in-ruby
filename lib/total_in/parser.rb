@@ -36,7 +36,7 @@ module TotalIn
 
     def parse_lines lines, contexts
       while line_string = lines.shift
-        line_parser, transformer = *self.class.parser_for_line(line_string)
+        line_parser, transformer = self.class.parser_for_line(line_string)
 
         contexts = transformer.call line_parser.new(line_string), contexts
         parse_lines lines, contexts
@@ -188,11 +188,24 @@ module TotalIn
       @line = line
     end
 
-    def self.field name, position_range, type = :string
+    def self.field name, range, type = :string
       define_method name do
-        value = line[position_range].strip
-        Typecaster.cast value, type
+        if range.is_a?(Array)
+          range.map { |r| value_at_position(r, type) }.compact
+        else
+          value_at_position range, type
+        end
       end
+    end
+
+    private
+
+    def value_at_position range, type
+      typecast line[range].strip, type
+    end
+
+    def typecast value, type
+      Typecaster.cast value, type
     end
   end
 
@@ -325,26 +338,21 @@ module TotalIn
   }
 
   class ReferenceNumbersLine < LineParser
-    field :first_reference_number, 2..36
-    field :second_reference_number, 37..71
+    field :reference_numbers, [2..36, 37..71]
   end
 
   TotalIn::Parser.register_parser "30", ReferenceNumbersLine, ->(line, contexts) {
-    contexts.current.reference_numbers.concat [
-      line.first_reference_number,
-      line.second_reference_number
-    ].compact
+    contexts.current.reference_numbers.concat line.reference_numbers
 
     contexts
   }
 
   class MessageLine < LineParser
-    field :first_message, 2..36
-    field :second_message, 37..71
+    field :messages, [2..36, 37..71]
   end
 
   TotalIn::Parser.register_parser "40", MessageLine, ->(line, contexts) {
-    [ line.first_message, line.second_message ].compact.each do |message|
+    line.messages.each do |message|
       contexts.current.add_message message
     end
 
@@ -352,33 +360,25 @@ module TotalIn
   }
 
   class NameLine < LineParser
-    field :first_name, 2..36
-    field :last_name, 37..71
+    field :names, [2..36, 37..71]
   end
 
   TotalIn::Parser.register_parser "50", NameLine, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.current.name = [
-      line.first_name,
-      line.last_name
-    ].compact.join(" ")
+    contexts.current.name = line.names.join " "
 
     contexts
   }
 
   class AddressLine < LineParser
-    field :first_address, 2..36
-    field :second_address, 37..71
+    field :addresses, [2..36, 37..71]
   end
 
   TotalIn::Parser.register_parser "51", AddressLine, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.current.address = [
-      line.first_address,
-      line.second_address
-    ].compact.join(" ")
+    contexts.current.address = line.addresses.join " "
 
     contexts
   }
@@ -418,10 +418,7 @@ module TotalIn
   TotalIn::Parser.register_parser "61", NameLine, ->(line, contexts) {
     contexts = SenderAccount.add_to_contexts contexts
 
-    contexts.current.name = [
-      line.first_name,
-      line.last_name
-    ].compact.join(" ")
+    contexts.current.name = line.names.join " "
 
     contexts
   }
@@ -429,10 +426,7 @@ module TotalIn
   TotalIn::Parser.register_parser "62", AddressLine, ->(line, contexts) {
     contexts = SenderAccount.add_to_contexts contexts
 
-    contexts.current.address = [
-      line.first_address,
-      line.second_address
-    ].compact.join(" ")
+    contexts.current.address = line.addresses.join " "
 
     contexts
   }
