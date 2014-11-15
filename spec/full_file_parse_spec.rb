@@ -25,6 +25,10 @@ RSpec.describe TotalIn do
         result.accounts.first
       end
 
+      it "stores the posting date" do
+        expect(account.date.to_s).to eq "2011-10-24"
+      end
+
       it "knows the number of transactions" do
         expect(account.number_of_transactions).to eq 6
       end
@@ -322,6 +326,10 @@ RSpec.describe TotalIn do
 
       it "knows the number of transactions" do
         expect(account.number_of_transactions).to eq 3
+      end
+
+      it "stores the posting date" do
+        expect(account.date.to_s).to eq "2011-10-24"
       end
 
       it "has the total amount" do

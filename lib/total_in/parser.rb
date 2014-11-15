@@ -159,9 +159,34 @@ module TotalIn
     def initialize line
       @line = line
     end
+
+    def self.field name, position_range, type = :string
+      define_method name do
+        value = line[position_range].strip
+        typecast value, type
+      end
+    end
+
+    private
+
+    def typecast value, type
+      typecasters.fetch(type).call(value) unless value == ""
+    end
+
+    def typecasters
+      {
+        integer: ->(value) { value.to_i },
+        time: ->(value) { Time.parse(value) },
+        date: ->(value) { Date.parse(value) },
+        string: ->(value) { value }
+      }
+    end
   end
 
   class DocumentStartLine < LineParser
+    field :id, 2..13
+    field :created_at, 14..34, :time
+
     def self.call line, contexts
       document_line = self.new line
 
@@ -169,14 +194,6 @@ module TotalIn
       contexts.last.created_at = document_line.created_at
 
       contexts
-    end
-
-    def id
-      line[2..13].strip
-    end
-
-    def created_at
-      Time.parse line[14..34]
     end
 
     TotalIn::Parser.register_parser "00", self
@@ -193,6 +210,10 @@ module TotalIn
   end
 
   class AccountStartLine < LineParser
+    field :number, 2..37
+    field :currency, 38..40
+    field :date, 41..48, :date
+
     def self.call line, contexts
       account_line = self.new line
 
@@ -207,22 +228,14 @@ module TotalIn
       contexts
     end
 
-    def number
-      line[2..37].strip
-    end
-
-    def currency
-      line[38..40]
-    end
-
-    def date
-      Date.parse line[41..48]
-    end
-
     TotalIn::Parser.register_parser "10", self
   end
 
   class AccountEndLine < LineParser
+    field :number_of_transactions, 2..9, :integer
+    field :amount, 10..26, :integer
+    field :statement_reference, 27..37
+
     def self.call line, contexts
       until contexts.last.is_a?(Account)
         contexts.pop
@@ -241,37 +254,14 @@ module TotalIn
       contexts
     end
 
-    def number_of_transactions
-      line[2..9].to_i
-    end
-
-    def amount
-      line[10..26].to_i
-    end
-
-    def statement_reference
-      line[27..37].strip
-    end
-
     TotalIn::Parser.register_parser "90", self
   end
 
   class TransactionLineParser < LineParser
-    def reference_number
-      line[2..36].strip
-    end
-
-    def amount
-      line[37..51].to_i
-    end
-
-    def serial_number
-      line[52..68].to_i
-    end
-
-    def receiving_bankgiro_number
-      line[69..76].strip
-    end
+    field :reference_number, 2..36
+    field :amount, 37..51, :integer
+    field :serial_number, 52..68, :integer
+    field :receiving_bankgiro_number, 69..76
   end
 
   class PaymentRecordStartLine < TransactionLineParser
@@ -301,6 +291,9 @@ module TotalIn
   end
 
   class DecuctionReordStartLine < TransactionLineParser
+    field :code, 69..69
+    field :receiving_bankgiro_number, 70..77
+
     def self.call line, contexts
       deduction_line = self.new line
 
@@ -323,23 +316,20 @@ module TotalIn
       contexts
     end
 
-    def code
-      line[69..69]
-    end
-
-    def receiving_bankgiro_number
-      line[70..77].strip
-    end
-
     TotalIn::Parser.register_parser "25", self
   end
 
-  class ReferenceNumbersLine
+  class ReferenceNumbersLine < LineParser
+    field :first_reference_number, 2..36
+    field :second_reference_number, 37..71
+
     def self.call line, contexts
+      line_parser = self.new line
+
       contexts.last.reference_numbers.concat [
-        line[2..36].strip,
-        line[37..71].strip
-      ].find_all { |m| m != "" }
+        line_parser.first_reference_number,
+        line_parser.second_reference_number
+      ].compact
 
       contexts
     end
@@ -347,9 +337,17 @@ module TotalIn
     TotalIn::Parser.register_parser "30", self
   end
 
-  class MessageLine
+  class MessageLine < LineParser
+    field :first_message, 2..36
+    field :second_message, 37..71
+
     def self.call line, contexts
-      [ line[2..36].strip, line[37..71].strip ].find_all { |m| m != "" }.each do |message|
+      line_parser = self.new line
+
+      [
+        line_parser.first_message,
+        line_parser.second_message
+      ].compact.each do |message|
         contexts.last.add_message message
       end
 
@@ -359,14 +357,19 @@ module TotalIn
     TotalIn::Parser.register_parser "40", self
   end
 
-  class NameLine
+  class NameLine < LineParser
+    field :first_name, 2..36
+    field :last_name, 37..71
+
     def self.call line, contexts
       contexts = Sender.add_to_contexts contexts
 
+      line_parser = self.new line
+
       contexts.last.name = [
-        line[2..36].strip,
-        line[37..71].strip
-      ].find_all { |m| m != "" }.join(" ")
+        line_parser.first_name,
+        line_parser.last_name
+      ].compact.join(" ")
 
       contexts
     end
@@ -374,14 +377,19 @@ module TotalIn
     TotalIn::Parser.register_parser "50", self
   end
 
-  class AddressLine
+  class AddressLine < LineParser
+    field :first_address, 2..36
+    field :second_address, 37..71
+
     def self.call line, contexts
       contexts = Sender.add_to_contexts contexts
 
+      line_parser = self.new line
+
       contexts.last.address = [
-        line[2..36].strip,
-        line[37..71].strip
-      ].find_all { |m| m != "" }.join(" ")
+        line_parser.first_address,
+        line_parser.second_address
+      ].compact.join(" ")
 
       contexts
     end
@@ -390,6 +398,10 @@ module TotalIn
   end
 
   class LocalityLine < LineParser
+    field :postal_code, 2..10
+    field :city, 11..45
+    field :country_code, 46..47
+
     def self.call line, contexts
       contexts = Sender.add_to_contexts contexts
       line_parser = self.new line
@@ -401,22 +413,14 @@ module TotalIn
       contexts
     end
 
-    def postal_code
-      line[2..10].strip
-    end
-
-    def city
-      line[11..45].strip
-    end
-
-    def country_code
-      line[46..47].strip
-    end
-
     TotalIn::Parser.register_parser "52", self
   end
 
   class SenderAccountLine < LineParser
+    field :account_number, 2..37
+    field :origin_code, 38..38, :integer
+    field :company_organization_number, 39..58
+
     def self.call line, contexts
       contexts = SenderAccount.add_to_contexts contexts
       line_parser = self.new line
@@ -428,31 +432,19 @@ module TotalIn
       contexts
     end
 
-    def account_number
-      line[2..37].strip
-    end
-
-    def origin_code
-      code = line[38..38].strip.to_i
-      code unless code.zero?
-    end
-
-    def company_organization_number
-      number = line[39..58].strip
-      number unless number == ""
-    end
-
     TotalIn::Parser.register_parser "60", self
   end
 
-  class SenderAccountNameLine
+  class SenderAccountNameLine < NameLine
     def self.call line, contexts
       contexts = SenderAccount.add_to_contexts contexts
 
+      line_parser = self.new line
+
       contexts.last.name = [
-        line[2..36].strip,
-        line[37..71].strip
-      ].find_all { |m| m != "" }.join(" ")
+        line_parser.first_name,
+        line_parser.last_name
+      ].compact.join(" ")
 
       contexts
     end
@@ -460,14 +452,16 @@ module TotalIn
     TotalIn::Parser.register_parser "61", self
   end
 
-  class SenderAccountAddressLine
+  class SenderAccountAddressLine < AddressLine
     def self.call line, contexts
       contexts = SenderAccount.add_to_contexts contexts
 
+      line_parser = self.new line
+
       contexts.last.address = [
-        line[2..36].strip,
-        line[37..71].strip
-      ].find_all { |m| m != "" }.join(" ")
+        line_parser.first_address,
+        line_parser.second_address
+      ].compact.join(" ")
 
       contexts
     end
@@ -475,7 +469,7 @@ module TotalIn
     TotalIn::Parser.register_parser "62", self
   end
 
-  class SenderAccountLocalityLine < LineParser
+  class SenderAccountLocalityLine < LocalityLine
     def self.call line, contexts
       contexts = SenderAccount.add_to_contexts contexts
       line_parser = self.new line
@@ -487,22 +481,16 @@ module TotalIn
       contexts
     end
 
-    def postal_code
-      line[2..10].strip
-    end
-
-    def city
-      line[11..45].strip
-    end
-
-    def country_code
-      line[46..47].strip
-    end
-
     TotalIn::Parser.register_parser "63", self
   end
 
   class InternationalLine < LineParser
+    field :cost, 2..16, :integer
+    field :cost_currency, 17..19
+    field :amount, 38..52, :integer
+    field :amount_currency, 53..55
+    field :exchange_rate, 56..67, :integer
+
     def self.call line, contexts
       until contexts.last.kind_of?(Transaction)
         contexts.pop
@@ -520,28 +508,6 @@ module TotalIn
       contexts.last.international = international
 
       contexts
-    end
-
-    def cost
-      line[2..16].to_i
-    end
-
-    def cost_currency
-      currency = line[17..19].strip
-      currency unless currency == ""
-    end
-
-    def amount
-      line[38..52].to_i
-    end
-
-    def amount_currency
-      currency = line[53..55].strip
-      currency unless currency == ""
-    end
-
-    def exchange_rate
-      line[56..67].to_i
     end
 
     TotalIn::Parser.register_parser "70", self
