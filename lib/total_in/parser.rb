@@ -158,17 +158,17 @@ module TotalIn
     def self.field name, position_range, type = :string
       define_method name do
         value = line[position_range].strip
-        typecast value, type
+        Typecaster.cast value, type
       end
     end
+  end
 
-    private
-
-    def typecast value, type
-      typecasters.fetch(type).call(value) unless value == ""
+  module Typecaster
+    def self.cast value, type
+      casters.fetch(type).call(value) unless value == ""
     end
 
-    def typecasters
+    def self.casters
       {
         integer: ->(value) { value.to_i },
         time: ->(value) { Time.parse(value) },
