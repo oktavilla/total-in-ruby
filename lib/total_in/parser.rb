@@ -32,6 +32,8 @@ module TotalIn
       contexts.result
     end
 
+    private
+
     def parse_lines lines, contexts
       while line_string = lines.shift
         line_parser, transformer = *self.class.parser_for_line(line_string)
@@ -74,7 +76,7 @@ module TotalIn
     end
   end
 
-  class Result
+  class Document
     attr_accessor :report_id
     attr_accessor :created_at
     attr_accessor :number_of_lines
@@ -215,11 +217,11 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "00", DocumentStartLine, ->(line, contexts) {
-    result = Result.new
-    result.report_id = line.id
-    result.created_at = line.created_at
+    document = Document.new
+    document.report_id = line.id
+    document.created_at = line.created_at
 
-    contexts.add result
+    contexts.add document
 
     contexts
   }
@@ -229,7 +231,7 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "99", DocumentEndLine, ->(line, contexts) {
-    contexts.move_to Result
+    contexts.move_to Document
 
     contexts.current.number_of_lines = line.number_of_lines
 
@@ -243,7 +245,7 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "10", AccountStartLine, ->(line, contexts) {
-    contexts.move_to Result
+    contexts.move_to Document
 
     account = Account.new
     account.account_number = line.number
