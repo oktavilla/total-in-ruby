@@ -42,11 +42,12 @@ module TotalIn
 
       contexts
     end
-
   end
 
   class Result
-    attr_accessor :report_id, :created_at, :number_of_lines
+    attr_accessor :report_id
+    attr_accessor :created_at
+    attr_accessor :number_of_lines
 
     def accounts
       @accounts ||= []
