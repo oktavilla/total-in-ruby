@@ -1,28 +1,14 @@
-# TotalIn
+# TotalIN file parser
 
-TODO: Write a gem description
+```ruby
+require "total_in"
 
-## Installation
-
-Add this line to your application's Gemfile:
-
-    gem "total-in"
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install total-in
-
-## Usage
-
-TODO: Write usage instructions here
+result = TotalIn.parse total_in_file_contents
+```
 
 ## Contributing
 
-1. Fork it ( http://github.com/joeljunstrom/total-in/fork )
+1. Fork it ( http://github.com/joeljunstrom/total-in-ruby/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)

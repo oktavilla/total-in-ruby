@@ -1,10 +1,10 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "total-in/version"
+require "total_in/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "total-in"
+  spec.name          = "total_in"
   spec.version       = TotalIn::VERSION
   spec.authors       = ["Joel Junström"]
   spec.email         = ["joel.junstrom@oktavilla.se"]
