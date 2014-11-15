@@ -291,6 +291,18 @@ RSpec.describe TotalIn do
           account.deductions.first
         end
 
+        it "parses the amount" do
+          expect(deduction.amount).to eq 52550
+        end
+
+        it "has no receiving bankgiro number" do
+          expect(deduction.receiving_bankgiro_number).to be nil
+        end
+
+        it "has no code" do
+          expect(deduction.code).to be nil
+        end
+
         it "has one reference number" do
           expect(deduction.reference_numbers).to eq ["987654123"]
         end
