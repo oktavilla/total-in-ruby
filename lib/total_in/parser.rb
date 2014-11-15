@@ -27,9 +27,9 @@ module TotalIn
     end
 
     def result
-      results = parse_lines text.each_line.to_a, [Result.new]
+      contexts = parse_lines text.each_line.to_a, Contexts.new
 
-      results.first
+      contexts.result
     end
 
     def parse_lines lines, contexts
@@ -41,6 +41,36 @@ module TotalIn
       end
 
       contexts
+    end
+
+    class Contexts
+      def result
+        contexts.first
+      end
+
+      def current
+        contexts.last
+      end
+
+      def add container
+        contexts.push container
+      end
+
+      def move_up
+        contexts.pop
+      end
+
+      def move_to container_class
+        until current.is_a?(container_class)
+          move_up
+        end
+      end
+
+      private
+
+      def contexts
+        @contexts ||= []
+      end
     end
   end
 
@@ -110,17 +140,17 @@ module TotalIn
 
   class Entity
     def self.add_to_contexts contexts
-      unless contexts.last.is_a?(self)
-        until contexts.last.kind_of?(Transaction)
-          contexts.pop
+      unless contexts.current.is_a?(self)
+        until contexts.current.kind_of?(Transaction)
+          contexts.move_up
         end
 
         entity = self.new
 
         setter_name = StringHelpers.underscore self.name.split("::").last
-        contexts.last.public_send "#{setter_name}=", entity
+        contexts.current.public_send "#{setter_name}=", entity
 
-        contexts.push entity
+        contexts.add entity
       end
 
       contexts
@@ -185,8 +215,11 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "00", DocumentStartLine, ->(line, contexts) {
-    contexts.last.report_id = line.id
-    contexts.last.created_at = line.created_at
+    result = Result.new
+    result.report_id = line.id
+    result.created_at = line.created_at
+
+    contexts.add result
 
     contexts
   }
@@ -196,7 +229,9 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "99", DocumentEndLine, ->(line, contexts) {
-    contexts.last.number_of_lines = line.number_of_lines
+    contexts.move_to Result
+
+    contexts.current.number_of_lines = line.number_of_lines
 
     contexts
   }
@@ -208,13 +243,15 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "10", AccountStartLine, ->(line, contexts) {
+    contexts.move_to Result
+
     account = Account.new
     account.account_number = line.number
     account.currency = line.currency
     account.date = line.date
 
-    contexts.last.accounts << account
-    contexts.push account
+    contexts.current.accounts << account
+    contexts.add account
 
     contexts
   }
@@ -226,17 +263,11 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "90", AccountEndLine, ->(line, contexts) {
-    until contexts.last.is_a?(Account)
-      contexts.pop
-    end
+    contexts.move_to Account
 
-    contexts.last.number_of_transactions = line.number_of_transactions
-    contexts.last.amount = line.amount
-    contexts.last.statement_reference = line.statement_reference
-
-    until contexts.last.is_a?(Result)
-      contexts.pop
-    end
+    contexts.current.number_of_transactions = line.number_of_transactions
+    contexts.current.amount = line.amount
+    contexts.current.statement_reference = line.statement_reference
 
     contexts
   }
@@ -249,9 +280,7 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "20", PaymentStartLine, ->(line, contexts) {
-    until contexts.last.is_a?(Account)
-      contexts.pop
-    end
+    contexts.move_to Account
 
     payment = Payment.new
 
@@ -260,9 +289,9 @@ module TotalIn
     payment.serial_number = line.serial_number
     payment.receiving_bankgiro_number = payment.receiving_bankgiro_number
 
-    contexts.last.payments << payment
+    contexts.current.payments << payment
 
-    contexts.push payment
+    contexts.add payment
 
     contexts
   }
@@ -276,9 +305,7 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "25", DecuctionStartLine, ->(line, contexts) {
-    until contexts.last.is_a?(Account)
-      contexts.pop
-    end
+    contexts.move_to Account
 
     deduction = Deduction.new
 
@@ -288,9 +315,9 @@ module TotalIn
     deduction.receiving_bankgiro_number = line.receiving_bankgiro_number
     deduction.code = line.code
 
-    contexts.last.deductions << deduction
+    contexts.current.deductions << deduction
 
-    contexts.push deduction
+    contexts.add deduction
 
     contexts
   }
@@ -301,7 +328,7 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "30", ReferenceNumbersLine, ->(line, contexts) {
-    contexts.last.reference_numbers.concat [
+    contexts.current.reference_numbers.concat [
       line.first_reference_number,
       line.second_reference_number
     ].compact
@@ -316,7 +343,7 @@ module TotalIn
 
   TotalIn::Parser.register_parser "40", MessageLine, ->(line, contexts) {
     [ line.first_message, line.second_message ].compact.each do |message|
-      contexts.last.add_message message
+      contexts.current.add_message message
     end
 
     contexts
@@ -330,7 +357,7 @@ module TotalIn
   TotalIn::Parser.register_parser "50", NameLine, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.last.name = [
+    contexts.current.name = [
       line.first_name,
       line.last_name
     ].compact.join(" ")
@@ -346,7 +373,7 @@ module TotalIn
   TotalIn::Parser.register_parser "51", AddressLine, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.last.address = [
+    contexts.current.address = [
       line.first_address,
       line.second_address
     ].compact.join(" ")
@@ -363,9 +390,9 @@ module TotalIn
   TotalIn::Parser.register_parser "52", LocalityLine, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.last.postal_code = line.postal_code
-    contexts.last.city = line.city
-    contexts.last.country_code = line.country_code
+    contexts.current.postal_code = line.postal_code
+    contexts.current.city = line.city
+    contexts.current.country_code = line.country_code
 
     contexts
   }
@@ -379,9 +406,9 @@ module TotalIn
   TotalIn::Parser.register_parser "60", SenderAccountLine, ->(line, contexts) {
     contexts = SenderAccount.add_to_contexts contexts
 
-    contexts.last.account_number = line.account_number
-    contexts.last.origin_code = line.origin_code
-    contexts.last.company_organization_number = line.company_organization_number
+    contexts.current.account_number = line.account_number
+    contexts.current.origin_code = line.origin_code
+    contexts.current.company_organization_number = line.company_organization_number
 
     contexts
   }
@@ -389,7 +416,7 @@ module TotalIn
   TotalIn::Parser.register_parser "61", NameLine, ->(line, contexts) {
     contexts = SenderAccount.add_to_contexts contexts
 
-    contexts.last.name = [
+    contexts.current.name = [
       line.first_name,
       line.last_name
     ].compact.join(" ")
@@ -400,7 +427,7 @@ module TotalIn
   TotalIn::Parser.register_parser "62", AddressLine, ->(line, contexts) {
     contexts = SenderAccount.add_to_contexts contexts
 
-    contexts.last.address = [
+    contexts.current.address = [
       line.first_address,
       line.second_address
     ].compact.join(" ")
@@ -411,9 +438,9 @@ module TotalIn
   TotalIn::Parser.register_parser "63", LocalityLine, ->(line, contexts) {
     contexts = SenderAccount.add_to_contexts contexts
 
-    contexts.last.postal_code = line.postal_code
-    contexts.last.city = line.city
-    contexts.last.country_code = line.country_code
+    contexts.current.postal_code = line.postal_code
+    contexts.current.city = line.city
+    contexts.current.country_code = line.country_code
 
     contexts
   }
@@ -427,8 +454,8 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "70", InternationalLine, ->(line, contexts) {
-    until contexts.last.kind_of?(Transaction)
-      contexts.pop
+    until contexts.current.kind_of?(Transaction)
+      contexts.move_up
     end
 
     international = International.new
@@ -438,7 +465,7 @@ module TotalIn
     international.amount_currency = line.amount_currency
     international.exchange_rate = line.exchange_rate
 
-    contexts.last.international = international
+    contexts.current.international = international
 
     contexts
   }
