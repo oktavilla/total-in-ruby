@@ -18,8 +18,7 @@ module TotalIn
     end
 
     def self.parser_for_line line
-      identifier = line[0..1]
-      self.parsers[identifier] || [NullLineParser, ->(line, contexts) {}]
+      parsers.fetch line[0..1]
     end
 
     attr_reader :text
@@ -148,12 +147,6 @@ module TotalIn
     attr_accessor :amount
     attr_accessor :amount_currency
     attr_accessor :exchange_rate
-  end
-
-  class NullLineParser
-    def self.call line, context
-      context
-    end
   end
 
   class LineParser
