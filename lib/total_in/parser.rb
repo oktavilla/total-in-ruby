@@ -176,175 +176,173 @@ module TotalIn
     attr_accessor :exchange_rate
   end
 
-  module LineParsers
-    TotalIn::Parser.register_parser "00", DocumentStart, ->(line, contexts) {
-      document = Document.new
-      document.report_id = line.id
-      document.created_at = line.created_at
+  TotalIn::Parser.register_parser "00", LineParsers::DocumentStart, ->(line, contexts) {
+    document = Document.new
+    document.report_id = line.id
+    document.created_at = line.created_at
 
-      contexts.add document
+    contexts.add document
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "99", DocumentEnd, ->(line, contexts) {
-      contexts.move_to Document
+  TotalIn::Parser.register_parser "99", LineParsers::DocumentEnd, ->(line, contexts) {
+    contexts.move_to Document
 
-      contexts.current.number_of_lines = line.number_of_lines
+    contexts.current.number_of_lines = line.number_of_lines
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "10", AccountStart, ->(line, contexts) {
-      contexts.move_to Document
+  TotalIn::Parser.register_parser "10", LineParsers::AccountStart, ->(line, contexts) {
+    contexts.move_to Document
 
-      account = Account.new
-      account.account_number = line.number
-      account.currency = line.currency
-      account.date = line.date
+    account = Account.new
+    account.account_number = line.number
+    account.currency = line.currency
+    account.date = line.date
 
-      contexts.current.accounts << account
-      contexts.add account
+    contexts.current.accounts << account
+    contexts.add account
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "90", AccountEnd, ->(line, contexts) {
-      contexts.move_to Account
+  TotalIn::Parser.register_parser "90", LineParsers::AccountEnd, ->(line, contexts) {
+    contexts.move_to Account
 
-      contexts.current.number_of_transactions = line.number_of_transactions
-      contexts.current.amount = line.amount
-      contexts.current.statement_reference = line.statement_reference
+    contexts.current.number_of_transactions = line.number_of_transactions
+    contexts.current.amount = line.amount
+    contexts.current.statement_reference = line.statement_reference
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "20", PaymentStart, ->(line, contexts) {
-      contexts.move_to Account
+  TotalIn::Parser.register_parser "20", LineParsers::PaymentStart, ->(line, contexts) {
+    contexts.move_to Account
 
-      payment = Payment.new
+    payment = Payment.new
 
-      payment.reference_numbers << line.reference_number unless line.reference_number.to_i.zero?
-      payment.amount = line.amount
-      payment.serial_number = line.serial_number
-      payment.receiving_bankgiro_number = payment.receiving_bankgiro_number
+    payment.reference_numbers << line.reference_number unless line.reference_number.to_i.zero?
+    payment.amount = line.amount
+    payment.serial_number = line.serial_number
+    payment.receiving_bankgiro_number = payment.receiving_bankgiro_number
 
-      contexts.current.payments << payment
+    contexts.current.payments << payment
 
-      contexts.add payment
+    contexts.add payment
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "25", DecuctionStart, ->(line, contexts) {
-      contexts.move_to Account
+  TotalIn::Parser.register_parser "25", LineParsers::DecuctionStart, ->(line, contexts) {
+    contexts.move_to Account
 
-      deduction = Deduction.new
+    deduction = Deduction.new
 
-      deduction.reference_numbers << line.reference_number unless line.reference_number.to_i.zero?
-      deduction.amount = line.amount
-      deduction.serial_number = line.serial_number
-      deduction.receiving_bankgiro_number = line.receiving_bankgiro_number
-      deduction.code = line.code
+    deduction.reference_numbers << line.reference_number unless line.reference_number.to_i.zero?
+    deduction.amount = line.amount
+    deduction.serial_number = line.serial_number
+    deduction.receiving_bankgiro_number = line.receiving_bankgiro_number
+    deduction.code = line.code
 
-      contexts.current.deductions << deduction
+    contexts.current.deductions << deduction
 
-      contexts.add deduction
+    contexts.add deduction
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "30", ReferenceNumbers, ->(line, contexts) {
-      contexts.current.reference_numbers.concat line.reference_numbers
+  TotalIn::Parser.register_parser "30", LineParsers::ReferenceNumbers, ->(line, contexts) {
+    contexts.current.reference_numbers.concat line.reference_numbers
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "40", Messages, ->(line, contexts) {
-      line.messages.each do |message|
-        contexts.current.add_message message
-      end
+  TotalIn::Parser.register_parser "40", LineParsers::Messages, ->(line, contexts) {
+    line.messages.each do |message|
+      contexts.current.add_message message
+    end
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "50", Names, ->(line, contexts) {
-      contexts = Sender.add_to_contexts contexts
+  TotalIn::Parser.register_parser "50", LineParsers::Names, ->(line, contexts) {
+    contexts = Sender.add_to_contexts contexts
 
-      contexts.current.name = line.names.join " "
+    contexts.current.name = line.names.join " "
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "51", Addresses, ->(line, contexts) {
-      contexts = Sender.add_to_contexts contexts
+  TotalIn::Parser.register_parser "51", LineParsers::Addresses, ->(line, contexts) {
+    contexts = Sender.add_to_contexts contexts
 
-      contexts.current.address = line.addresses.join " "
+    contexts.current.address = line.addresses.join " "
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "52", Locality, ->(line, contexts) {
-      contexts = Sender.add_to_contexts contexts
+  TotalIn::Parser.register_parser "52", LineParsers::Locality, ->(line, contexts) {
+    contexts = Sender.add_to_contexts contexts
 
-      contexts.current.postal_code = line.postal_code
-      contexts.current.city = line.city
-      contexts.current.country_code = line.country_code
+    contexts.current.postal_code = line.postal_code
+    contexts.current.city = line.city
+    contexts.current.country_code = line.country_code
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "60", SenderAccount, ->(line, contexts) {
-      contexts = TotalIn::SenderAccount.add_to_contexts contexts
+  TotalIn::Parser.register_parser "60", LineParsers::SenderAccount, ->(line, contexts) {
+    contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-      contexts.current.account_number = line.account_number
-      contexts.current.origin_code = line.origin_code
-      contexts.current.company_organization_number = line.company_organization_number
+    contexts.current.account_number = line.account_number
+    contexts.current.origin_code = line.origin_code
+    contexts.current.company_organization_number = line.company_organization_number
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "61", Names, ->(line, contexts) {
-      contexts = TotalIn::SenderAccount.add_to_contexts contexts
+  TotalIn::Parser.register_parser "61", LineParsers::Names, ->(line, contexts) {
+    contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-      contexts.current.name = line.names.join " "
+    contexts.current.name = line.names.join " "
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "62", Addresses, ->(line, contexts) {
-      contexts = TotalIn::SenderAccount.add_to_contexts contexts
+  TotalIn::Parser.register_parser "62", LineParsers::Addresses, ->(line, contexts) {
+    contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-      contexts.current.address = line.addresses.join " "
+    contexts.current.address = line.addresses.join " "
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "63", Locality, ->(line, contexts) {
-      contexts = TotalIn::SenderAccount.add_to_contexts contexts
+  TotalIn::Parser.register_parser "63", LineParsers::Locality, ->(line, contexts) {
+    contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-      contexts.current.postal_code = line.postal_code
-      contexts.current.city = line.city
-      contexts.current.country_code = line.country_code
+    contexts.current.postal_code = line.postal_code
+    contexts.current.city = line.city
+    contexts.current.country_code = line.country_code
 
-      contexts
-    }
+    contexts
+  }
 
-    TotalIn::Parser.register_parser "70", International, ->(line, contexts) {
-      until contexts.current.kind_of?(Transaction)
-        contexts.move_up
-      end
+  TotalIn::Parser.register_parser "70", LineParsers::International, ->(line, contexts) {
+    until contexts.current.kind_of?(Transaction)
+      contexts.move_up
+    end
 
-      international = TotalIn::International.new
-      international.cost = line.cost
-      international.cost_currency = line.cost_currency
-      international.amount = line.amount
-      international.amount_currency = line.amount_currency
-      international.exchange_rate = line.exchange_rate
+    international = TotalIn::International.new
+    international.cost = line.cost
+    international.cost_currency = line.cost_currency
+    international.amount = line.amount
+    international.amount_currency = line.amount_currency
+    international.exchange_rate = line.exchange_rate
 
-      contexts.current.international = international
+    contexts.current.international = international
 
-      contexts
-    }
-  end
+    contexts
+  }
 end
