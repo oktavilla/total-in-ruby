@@ -70,8 +70,23 @@ module TotalIn
     end
   end
 
-  class Document
-    attr_accessor :report_id
+  class AttributeReceiver
+    def initialize attrs = {}
+      self.assign_attributes attrs
+    end
+
+    def assign_attributes attrs
+      @attributes = Hash[attrs.find_all { |method_name, _value| self.respond_to?(method_name) }]
+      attributes.each do |method_name, value|
+        self.public_send "#{method_name}=", value
+      end
+    end
+
+    attr_reader :attributes
+  end
+
+  class Document < AttributeReceiver
+    attr_accessor :id
     attr_accessor :created_at
     attr_accessor :delivery_number
     attr_accessor :file_type
@@ -83,7 +98,7 @@ module TotalIn
     end
   end
 
-  class Account
+  class Account < AttributeReceiver
     attr_accessor :account_number
     attr_accessor :currency
     attr_accessor :date
@@ -100,7 +115,7 @@ module TotalIn
     end
   end
 
-  class Transaction
+  class Transaction < AttributeReceiver
     def reference_numbers
       @reference_numbers ||= []
     end
@@ -137,7 +152,7 @@ module TotalIn
     attr_accessor :code
   end
 
-  class Entity
+  class Entity < AttributeReceiver
     def self.add_to_contexts contexts
       unless contexts.current.is_a?(self)
         until contexts.current.kind_of?(Transaction)
@@ -171,7 +186,7 @@ module TotalIn
     attr_accessor :company_organization_number
   end
 
-  class International
+  class International < AttributeReceiver
     attr_accessor :cost
     attr_accessor :cost_currency
     attr_accessor :amount
@@ -180,12 +195,7 @@ module TotalIn
   end
 
   TotalIn::Parser.register_parser "00", LineParsers::DocumentStart, ->(line, contexts) {
-    document = Document.new
-    document.report_id = line.id
-    document.created_at = line.created_at
-    document.delivery_number = line.delivery_number
-    document.file_type = line.file_type
-    document.name = line.name
+    document = Document.new line.attributes
 
     contexts.add document
 
@@ -203,10 +213,7 @@ module TotalIn
   TotalIn::Parser.register_parser "10", LineParsers::AccountStart, ->(line, contexts) {
     contexts.move_to Document
 
-    account = Account.new
-    account.account_number = line.number
-    account.currency = line.currency
-    account.date = line.date
+    account = Account.new line.attributes
 
     contexts.current.accounts << account
     contexts.add account
@@ -217,9 +224,7 @@ module TotalIn
   TotalIn::Parser.register_parser "90", LineParsers::AccountEnd, ->(line, contexts) {
     contexts.move_to Account
 
-    contexts.current.number_of_transactions = line.number_of_transactions
-    contexts.current.amount = line.amount
-    contexts.current.statement_reference = line.statement_reference
+    contexts.current.assign_attributes line.attributes
 
     contexts
   }
@@ -227,12 +232,8 @@ module TotalIn
   TotalIn::Parser.register_parser "20", LineParsers::PaymentStart, ->(line, contexts) {
     contexts.move_to Account
 
-    payment = Payment.new
-
-    payment.reference_numbers << line.reference_number unless line.reference_number.to_i.zero?
-    payment.amount = line.amount
-    payment.serial_number = line.serial_number
-    payment.receiving_bankgiro_number = payment.receiving_bankgiro_number
+    payment = Payment.new line.attributes
+    payment.reference_numbers << line.reference_number if line.reference_number
 
     contexts.current.payments << payment
 
@@ -244,16 +245,10 @@ module TotalIn
   TotalIn::Parser.register_parser "25", LineParsers::DeductionStart, ->(line, contexts) {
     contexts.move_to Account
 
-    deduction = Deduction.new
-
-    deduction.reference_numbers << line.reference_number unless line.reference_number.to_i.zero?
-    deduction.amount = line.amount
-    deduction.serial_number = line.serial_number
-    deduction.receiving_bankgiro_number = line.receiving_bankgiro_number
-    deduction.code = line.code
+    deduction = Deduction.new line.attributes
+    deduction.reference_numbers << line.reference_number if line.reference_number
 
     contexts.current.deductions << deduction
-
     contexts.add deduction
 
     contexts
@@ -292,9 +287,7 @@ module TotalIn
   TotalIn::Parser.register_parser "52", LineParsers::Locality, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.current.postal_code = line.postal_code
-    contexts.current.city = line.city
-    contexts.current.country_code = line.country_code
+    contexts.current.assign_attributes line.attributes
 
     contexts
   }
@@ -302,9 +295,7 @@ module TotalIn
   TotalIn::Parser.register_parser "60", LineParsers::SenderAccount, ->(line, contexts) {
     contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-    contexts.current.account_number = line.account_number
-    contexts.current.origin_code = line.origin_code
-    contexts.current.company_organization_number = line.company_organization_number
+    contexts.current.assign_attributes line.attributes
 
     contexts
   }
@@ -328,9 +319,7 @@ module TotalIn
   TotalIn::Parser.register_parser "63", LineParsers::Locality, ->(line, contexts) {
     contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-    contexts.current.postal_code = line.postal_code
-    contexts.current.city = line.city
-    contexts.current.country_code = line.country_code
+    contexts.current.assign_attributes line.attributes
 
     contexts
   }
@@ -340,12 +329,7 @@ module TotalIn
       contexts.move_up
     end
 
-    international = TotalIn::International.new
-    international.cost = line.cost
-    international.cost_currency = line.cost_currency
-    international.amount = line.amount
-    international.amount_currency = line.amount_currency
-    international.exchange_rate = line.exchange_rate
+    international = TotalIn::International.new line.attributes
 
     contexts.current.international = international
 

@@ -15,7 +15,7 @@ module TotalIn
     end
 
     class AccountStart < LineParser
-      field :number, 2..37
+      field :account_number, 2..37
       field :currency, 38..40
       field :date, 41..48, :date
     end

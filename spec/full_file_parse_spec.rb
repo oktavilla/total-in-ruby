@@ -1,31 +1,31 @@
 require "total_in"
 
 RSpec.describe TotalIn do
-  let :text do
-    File.read File.join(__dir__, "fixtures/total_in_full.txt")
-  end
-
   describe "parse" do
-    let :result do
-      TotalIn.parse text
+    before :all do
+      @document = TotalIn.parse File.read File.join(__dir__, "fixtures/total_in_full.txt")
     end
 
-    it "find the result meta data" do
-      expect(result.report_id).to eq "TI222222"
-      expect(result.created_at.strftime("%Y-%m-%d %H:%M:%S")).to eq "2011-10-25 12:34:56"
-      expect(result.delivery_number).to eq 1
-      expect(result.file_type).to eq "TL1"
-      expect(result.name).to eq "TOTALIN"
-      expect(result.number_of_lines).to eq 61
+    let :document do
+      @document
+    end
+
+    it "find the document meta data" do
+      expect(document.id).to eq "TI222222"
+      expect(document.created_at.strftime("%Y-%m-%d %H:%M:%S")).to eq "2011-10-25 12:34:56"
+      expect(document.delivery_number).to eq 1
+      expect(document.file_type).to eq "TL1"
+      expect(document.name).to eq "TOTALIN"
+      expect(document.number_of_lines).to eq 61
     end
 
     it "finds two accounts" do
-      expect(result.accounts.size).to eq 2
+      expect(document.accounts.size).to eq 2
     end
 
     describe "first account" do
       let :account do
-        result.accounts.first
+        document.accounts.first
       end
 
       it "stores the posting date" do
@@ -163,7 +163,7 @@ RSpec.describe TotalIn do
           end
 
           it "do not have a receiving_bankgiro_number" do
-            expect(payment.receiving_bankgiro_number).to be nil
+            expect(payment.receiving_bankgiro_number).to eq "34523455"
           end
 
           it "parses the message" do
@@ -336,7 +336,7 @@ RSpec.describe TotalIn do
 
     describe "second account" do
       let :account do
-        result.accounts.last
+        document.accounts.last
       end
 
       it "knows the number of transactions" do

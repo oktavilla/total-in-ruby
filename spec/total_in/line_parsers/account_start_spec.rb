@@ -8,7 +8,7 @@ module TotalIn
       end
 
       it "parses the account number" do
-        expect(account_start.number).to eq "10181"
+        expect(account_start.account_number).to eq "10181"
       end
 
       it "parses the currency" do
