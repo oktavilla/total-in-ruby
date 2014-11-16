@@ -1,3 +1,5 @@
+require "time"
+
 module TotalIn
   module Typecaster
     def self.cast value, type
