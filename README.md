@@ -1,4 +1,10 @@
-# TotalIN file parser
+# Total-IN file parser
+
+[![Code Climate](https://codeclimate.com/github/Oktavilla/total-in-ruby/badges/gpa.svg)](https://codeclimate.com/github/Oktavilla/total-in-ruby)
+[![Test Coverage](https://codeclimate.com/github/Oktavilla/total-in-ruby/badges/coverage.svg)](https://codeclimate.com/github/Oktavilla/total-in-ruby)
+
+
+## Usage
 
 ```ruby
 require "total_in"
