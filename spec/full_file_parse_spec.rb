@@ -13,6 +13,9 @@ RSpec.describe TotalIn do
     it "find the result meta data" do
       expect(result.report_id).to eq "TI222222"
       expect(result.created_at.to_s).to eq "2011-10-25 12:34:56 +0200"
+      expect(result.delivery_number).to eq 1
+      expect(result.file_type).to eq "TL1"
+      expect(result.name).to eq "TOTALIN"
       expect(result.number_of_lines).to eq 61
     end
 

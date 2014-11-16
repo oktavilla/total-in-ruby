@@ -73,6 +73,9 @@ module TotalIn
   class Document
     attr_accessor :report_id
     attr_accessor :created_at
+    attr_accessor :delivery_number
+    attr_accessor :file_type
+    attr_accessor :name
     attr_accessor :number_of_lines
 
     def accounts
@@ -180,6 +183,9 @@ module TotalIn
     document = Document.new
     document.report_id = line.id
     document.created_at = line.created_at
+    document.delivery_number = line.delivery_number
+    document.file_type = line.file_type
+    document.name = line.name
 
     contexts.add document
 
@@ -235,7 +241,7 @@ module TotalIn
     contexts
   }
 
-  TotalIn::Parser.register_parser "25", LineParsers::DecuctionStart, ->(line, contexts) {
+  TotalIn::Parser.register_parser "25", LineParsers::DeductionStart, ->(line, contexts) {
     contexts.move_to Account
 
     deduction = Deduction.new
@@ -254,13 +260,13 @@ module TotalIn
   }
 
   TotalIn::Parser.register_parser "30", LineParsers::ReferenceNumbers, ->(line, contexts) {
-    contexts.current.reference_numbers.concat line.reference_numbers
+    contexts.current.reference_numbers.concat line.values
 
     contexts
   }
 
   TotalIn::Parser.register_parser "40", LineParsers::Messages, ->(line, contexts) {
-    line.messages.each do |message|
+    line.values.each do |message|
       contexts.current.add_message message
     end
 
@@ -270,7 +276,7 @@ module TotalIn
   TotalIn::Parser.register_parser "50", LineParsers::Names, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.current.name = line.names.join " "
+    contexts.current.name = line.values.join " "
 
     contexts
   }
@@ -278,7 +284,7 @@ module TotalIn
   TotalIn::Parser.register_parser "51", LineParsers::Addresses, ->(line, contexts) {
     contexts = Sender.add_to_contexts contexts
 
-    contexts.current.address = line.addresses.join " "
+    contexts.current.address = line.values.join " "
 
     contexts
   }
@@ -306,7 +312,7 @@ module TotalIn
   TotalIn::Parser.register_parser "61", LineParsers::Names, ->(line, contexts) {
     contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-    contexts.current.name = line.names.join " "
+    contexts.current.name = line.values.join " "
 
     contexts
   }
@@ -314,7 +320,7 @@ module TotalIn
   TotalIn::Parser.register_parser "62", LineParsers::Addresses, ->(line, contexts) {
     contexts = TotalIn::SenderAccount.add_to_contexts contexts
 
-    contexts.current.address = line.addresses.join " "
+    contexts.current.address = line.values.join " "
 
     contexts
   }

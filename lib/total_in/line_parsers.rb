@@ -4,7 +4,10 @@ module TotalIn
   module LineParsers
     class DocumentStart < LineParser
       field :id, 2..13
-      field :created_at, 14..34, :time
+      field :created_at, 14..33, :time
+      field :delivery_number, 34..35, :integer
+      field :file_type, 36..38
+      field :name, 39..48
     end
 
     class DocumentEnd < LineParser
@@ -30,28 +33,28 @@ module TotalIn
       field :receiving_bankgiro_number, 69..76
     end
 
-    class DecuctionStart < LineParser
+    class DeductionStart < LineParser
       field :reference_number, 2..36
       field :amount, 37..51, :integer
       field :serial_number, 52..68, :integer
-      field :code, 69..69
+      field :code, 69..69, :integer
       field :receiving_bankgiro_number, 70..77
     end
 
-    class ReferenceNumbers < LineParser
-      field :reference_numbers, [2..36, 37..71]
+    class Values < LineParser
+      field :values, [2..36, 37..71]
     end
 
-    class Messages < LineParser
-      field :messages, [2..36, 37..71]
+    class ReferenceNumbers < Values
     end
 
-    class Names < LineParser
-      field :names, [2..36, 37..71]
+    class Messages < Values
     end
 
-    class Addresses < LineParser
-      field :addresses, [2..36, 37..71]
+    class Names < Values
+    end
+
+    class Addresses < Values
     end
 
     class Locality < LineParser
@@ -75,4 +78,3 @@ module TotalIn
     end
   end
 end
-
