@@ -11,10 +11,6 @@ module TotalIn
       parsers[identifier] = [parser_class, transformer]
     end
 
-    def self.parser_for_line line
-      parsers.fetch line[0..1]
-    end
-
     attr_reader :text
     def initialize text
       @text = text
@@ -29,14 +25,21 @@ module TotalIn
     private
 
     def parse_lines lines, contexts
-      while line_string = lines.shift
-        line_parser, transformer = self.class.parser_for_line(line_string)
-
-        contexts = transformer.call line_parser.new(line_string), contexts
-        parse_lines lines, contexts
+      if line = lines.shift
+        parse_lines lines, parse_line(line, contexts)
+      else
+        contexts
       end
+    end
 
-      contexts
+    def parse_line line, contexts
+      parser, transformer = parser_for_line(line)
+
+      transformer.call parser.new(line), contexts
+    end
+
+    def parser_for_line line
+      self.class.parsers.fetch line[0..1]
     end
 
     class Contexts
