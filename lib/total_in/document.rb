@@ -1,3 +1,4 @@
+require "total_in/string_helpers"
 require "total_in/attribute_methods"
 
 module TotalIn
