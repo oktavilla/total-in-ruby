@@ -82,20 +82,7 @@ module TotalIn
       attribute :country_code
 
       def self.add_to_contexts contexts
-        unless contexts.current.is_a?(self)
-          until contexts.current.kind_of?(Transaction)
-            contexts.move_up
-          end
-
-          entity = self.new
-
-          setter_name = StringHelpers.underscore self.name.split("::").last
-          contexts.current.public_send "#{setter_name}=", entity
-
-          contexts.add entity
-        end
-
-        contexts
+        contexts.move_to_or_add_to_parent self, Transaction
       end
     end
 
@@ -111,20 +98,7 @@ module TotalIn
       attribute :company_organization_number
 
       def self.add_to_contexts contexts
-        unless contexts.current.is_a?(self)
-          until contexts.current.kind_of?(Transaction)
-            contexts.move_up
-          end
-
-          entity = self.new
-
-          setter_name = StringHelpers.underscore self.name.split("::").last
-          contexts.current.public_send "#{setter_name}=", entity
-
-          contexts.add entity
-        end
-
-        contexts
+        contexts.move_to_or_add_to_parent self, Transaction
       end
     end
 

@@ -81,8 +81,6 @@ module TotalIn
         @target_class = target_class
       end
 
-      private
-
       attr_reader :target_class
     end
 
