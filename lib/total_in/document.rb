@@ -15,6 +15,14 @@ module TotalIn
       @accounts ||= []
     end
 
+    def payments
+      accounts.map { |a| a.payments }.flatten
+    end
+
+    def deductions
+      accounts.map { |a| a.deductions }.flatten
+    end
+
     class Account
       include AttributeMethods
       attribute :account_number
