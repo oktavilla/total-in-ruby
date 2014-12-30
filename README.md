@@ -3,6 +3,7 @@
 [![Code Climate](https://codeclimate.com/github/Oktavilla/total-in-ruby/badges/gpa.svg)](https://codeclimate.com/github/Oktavilla/total-in-ruby)
 [![Test Coverage](https://codeclimate.com/github/Oktavilla/total-in-ruby/badges/coverage.svg)](https://codeclimate.com/github/Oktavilla/total-in-ruby)
 
+Parses transaction files in the [TotalIn format](http://www.nordea.se/Images/39-16101/postbeskrivning-total-in-eng.pdf).
 
 ## Usage
 
