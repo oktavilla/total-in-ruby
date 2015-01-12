@@ -13,7 +13,7 @@ module TotalIn
 
       it "extracts the created at timestamp" do
         expect(document_start.created_at).to be_a Time
-        expect(document_start.created_at.strftime("%Y-%m-%d %H:%M:%S")).to eq "2011-10-25 12:34:56"
+        expect(document_start.created_at.strftime("%Y-%m-%d %H:%M:%S")).to eq "2011-10-25 04:13:30"
       end
 
       it "parses the deliver number" do
