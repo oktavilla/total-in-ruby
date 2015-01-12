@@ -3,12 +3,25 @@ require "total_in/line_processors"
 
 module TotalIn
   module LineHandlers
-    Handler = Struct.new :parser, :processor do
-      def handle line, contexts
-        line_parser = self.parser.new(line)
-
-        processor.call line_parser, contexts
-      end
+    def self.mapping
+      {
+        "00" => self.document_start,
+        "99" => self.document_end,
+        "10" => self.account_start,
+        "90" => self.account_end,
+        "20" => self.payment_start,
+        "25" => self.deduction_start,
+        "30" => self.reference_numbers,
+        "40" => self.messages,
+        "50" => self.sender_names,
+        "51" => self.sender_address,
+        "52" => self.sender_locality,
+        "60" => self.sender_account_start,
+        "61" => self.sender_account_names,
+        "62" => self.sender_account_address,
+        "63" => self.sender_account_locality,
+        "70" => self.international
+      }
     end
 
     def self.document_start
@@ -75,25 +88,12 @@ module TotalIn
       Handler.new LineParsers::International, LineProcessors::International
     end
 
-    def self.all
-      {
-        "00" => self.document_start,
-        "99" => self.document_end,
-        "10" => self.account_start,
-        "90" => self.account_end,
-        "20" => self.payment_start,
-        "25" => self.deduction_start,
-        "30" => self.reference_numbers,
-        "40" => self.messages,
-        "50" => self.sender_names,
-        "51" => self.sender_address,
-        "52" => self.sender_locality,
-        "60" => self.sender_account_start,
-        "61" => self.sender_account_names,
-        "62" => self.sender_account_address,
-        "63" => self.sender_account_locality,
-        "70" => self.international
-      }
+    Handler = Struct.new :parser, :processor do
+      def process line, contexts
+        line_parser = self.parser.new(line)
+
+        processor.call line_parser, contexts
+      end
     end
   end
 end

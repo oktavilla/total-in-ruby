@@ -28,21 +28,11 @@ module TotalIn
     def parse_line line, contexts
       handler = handler_for_line line
 
-      handler.handle line, contexts
+      handler.process line, contexts
     end
 
     def handler_for_line line
-      self.class.handlers.fetch line[0..1]
+      LineHandlers.mapping.fetch line[0..1]
     end
-
-    def self.handlers
-      @handlers ||= {}
-    end
-
-    def self.register_handlers handlers
-      @handlers = handlers
-    end
-
-    register_handlers LineHandlers.all
   end
 end
