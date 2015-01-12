@@ -32,7 +32,7 @@ module TotalIn
     end
 
     def value_at_position range, type
-      typecast line[range].strip, type
+      typecast line[range].to_s.strip, type
     end
 
     def typecast value, type
