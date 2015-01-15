@@ -11,7 +11,8 @@ module TotalIn
         integer: ->(value) { value.to_i },
         time: ->(value) { Time.strptime(value, "%Y%m%d%H%M%S%N") },
         date: ->(value) { Date.strptime(value, "%Y%m%d") },
-        string: ->(value) { value unless value.match(/\A0+\Z/) }
+        string: ->(value) { value unless value.match(/\A0+\Z/) },
+        raw: ->(value) { value }
       }
     end
   end
