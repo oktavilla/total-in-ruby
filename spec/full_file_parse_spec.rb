@@ -12,7 +12,7 @@ RSpec.describe TotalIn do
 
     it "find the document meta data" do
       expect(document.id).to eq "TI222222"
-      expect(document.created_at.strftime("%Y-%m-%d %H:%M:%S")).to eq "2011-10-25 12:34:56"
+      expect(document.created_at.strftime("%Y-%m-%d %H:%M:%S")).to eq "2011-10-25 04:13:30"
       expect(document.delivery_number).to eq 1
       expect(document.file_type).to eq "TL1"
       expect(document.name).to eq "TOTALIN"

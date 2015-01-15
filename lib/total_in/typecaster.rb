@@ -9,7 +9,7 @@ module TotalIn
     def self.casters
       {
         integer: ->(value) { value.to_i },
-        time: ->(value) { Time.parse(value) },
+        time: ->(value) { Time.strptime(value, "%Y%m%d%H%M%S%N") },
         date: ->(value) { Date.parse(value) },
         string: ->(value) { value unless value.match(/\A0+\Z/) }
       }
