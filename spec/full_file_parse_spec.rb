@@ -3,7 +3,9 @@ require "total_in"
 RSpec.describe TotalIn do
   describe "parse" do
     before :all do
-      @document = TotalIn.parse File.read File.join(__dir__, "fixtures/total_in_full.txt")
+      File.open File.join(__dir__, "fixtures/total_in_full_latin_1.txt"), encoding: "iso-8859-1" do |file|
+        @document = TotalIn.parse file
+      end
     end
 
     let :document do
