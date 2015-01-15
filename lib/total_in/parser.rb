@@ -10,7 +10,7 @@ module TotalIn
     end
 
     def result
-      contexts = parse_lines text.each_line.to_a, Contexts.new
+      contexts = parse_lines text.each_line, Contexts.new
 
       contexts.result
     end
@@ -18,9 +18,9 @@ module TotalIn
     private
 
     def parse_lines lines, contexts
-      if line = lines.shift
-        parse_lines lines, parse_line(line, contexts)
-      else
+      begin
+        parse_lines lines, parse_line(lines.next, contexts)
+      rescue StopIteration
         contexts
       end
     end
