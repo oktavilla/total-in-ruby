@@ -1,3 +1,5 @@
+require "total_in/document"
+
 module TotalIn
   RSpec.describe Document do
     describe "#payments" do
@@ -33,7 +35,6 @@ module TotalIn
         document.accounts << account_two
 
         expect(document.deductions).to eq [deduction_one, deduction_two]
-
       end
     end
   end
