@@ -4,10 +4,6 @@ module TotalIn
     field :record_type, 0..1, :raw
     field :file_type, 36..38
 
-    def self.valid? line
-      new(line).valid?
-    end
-
     def valid?
       errors.empty?
     end
