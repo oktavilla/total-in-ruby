@@ -15,12 +15,16 @@ module TotalIn
       @accounts ||= []
     end
 
+    def transaction_date
+      accounts.map(&:date).compact.first
+    end
+
     def payments
-      accounts.map { |a| a.payments }.flatten
+      accounts.flat_map(&:payments)
     end
 
     def deductions
-      accounts.map { |a| a.deductions }.flatten
+      accounts.flat_map(&:deductions)
     end
 
     class Account

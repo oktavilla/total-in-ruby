@@ -2,6 +2,20 @@ require "total_in/document"
 
 module TotalIn
   RSpec.describe Document do
+    describe "#transaction_date" do
+      it "delegates to the first account date it finds" do
+        document = Document.new
+        document.accounts << Document::Account.new
+        document.accounts << Document::Account.new(date: "some date")
+
+        expect(document.transaction_date).to eq "some date"
+      end
+
+      it "returns nil if there are no account dates" do
+        expect(Document.new.transaction_date).to be nil
+      end
+    end
+
     describe "#payments" do
       it "returns payments from all accounts" do
         document = Document.new
