@@ -34,7 +34,10 @@ module TotalIn
 
     def parse_lines contexts
       begin
-        parse_lines parse_line(self.lines.next, contexts)
+        loop do
+          contexts = parse_line self.lines.next, contexts
+        end
+        contexts
       rescue StopIteration
         self.lines.rewind # Ensure we do not bomb out when calling result multiple times
         contexts
