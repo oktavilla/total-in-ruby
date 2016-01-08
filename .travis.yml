@@ -1,8 +1,7 @@
 language: ruby
 rvm:
-- 2.1.5
-- 2.0.0-p598
-script: rspec spec
+- 2.2.3
+script: bundle exec rspec spec
 addons:
   code_climate:
     repo_token:
