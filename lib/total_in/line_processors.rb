@@ -77,16 +77,16 @@ module TotalIn
     }
 
     class WithTargetClass
+      attr_reader :target_class
+
       def initialize target_class
         @target_class = target_class
       end
-
-      attr_reader :target_class
     end
 
     class Names < WithTargetClass
       def call line, contexts
-        contexts = target_class.add_to_contexts contexts
+        contexts.move_to_or_add_to_parent self.target_class, Document::Transaction
 
         contexts.current.name = line.values.join " "
 
@@ -94,10 +94,9 @@ module TotalIn
       end
     end
 
-
     class Addresses < WithTargetClass
       def call line, contexts
-        contexts = target_class.add_to_contexts contexts
+        contexts.move_to_or_add_to_parent self.target_class, Document::Transaction
 
         contexts.current.address = line.values.join " "
 
@@ -107,7 +106,7 @@ module TotalIn
 
     class Locality < WithTargetClass
       def call line, contexts
-        contexts = target_class.add_to_contexts contexts
+        contexts.move_to_or_add_to_parent self.target_class, Document::Transaction
 
         contexts.current.assign_attributes line.attributes
 
@@ -116,7 +115,7 @@ module TotalIn
     end
 
     SenderAccount = ->(line, contexts) {
-      contexts = Document::SenderAccount.add_to_contexts contexts
+      contexts.move_to_or_add_to_parent Document::SenderAccount, Document::Transaction
 
       contexts.current.assign_attributes line.attributes
 
@@ -124,9 +123,7 @@ module TotalIn
     }
 
     International = ->(line, contexts) {
-      until contexts.current.kind_of?(Document::Transaction)
-        contexts.move_up
-      end
+      contexts.move_to Document::Transaction
 
       international = Document::International.new line.attributes
 
