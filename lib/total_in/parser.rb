@@ -16,31 +16,24 @@ module TotalIn
     end
 
     def result
-      parse_lines(Contexts.new).result
+      contexts = self.lines.each_with_object(Contexts.new) do |line, c|
+        parse_line line, c
+      end
+
+      contexts.result
     end
 
     protected
 
     def lines
-      @lines ||= file.each_line
+      file.each_line
     end
 
     private
 
     def validate_file_format
-      validator = FileFormatValidator.new first_line
-      raise InvalidFileFormatError.new(validator.errors.join(", ")) unless validator.valid?
-    end
-
-    def parse_lines contexts
-      begin
-        loop do
-          contexts = parse_line self.lines.next, contexts
-        end
-        contexts
-      rescue StopIteration
-        self.lines.rewind # Ensure we do not bomb out when calling result multiple times
-        contexts
+      unless FileFormatValidator.new(first_line).valid?
+        raise InvalidFileFormatError.new validator.errors.join(", ")
       end
     end
 

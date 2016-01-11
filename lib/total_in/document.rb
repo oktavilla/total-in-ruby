@@ -92,10 +92,6 @@ module TotalIn
       attribute :postal_code
       attribute :city
       attribute :country_code
-
-      def self.add_to_contexts contexts
-        contexts.move_to_or_add_to_parent self, Transaction
-      end
     end
 
     class SenderAccount
@@ -108,10 +104,6 @@ module TotalIn
       attribute :account_number
       attribute :origin_code
       attribute :company_organization_number
-
-      def self.add_to_contexts contexts
-        contexts.move_to_or_add_to_parent self, Transaction
-      end
     end
 
     class International
