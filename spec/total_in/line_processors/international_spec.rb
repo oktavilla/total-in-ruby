@@ -5,41 +5,27 @@ module TotalIn
   module LineProcessors
     RSpec.describe "International" do
       let :line do
-        double "Line", attributes: {}
-      end
-
-      let :transaction do
-        Document::Transaction.new
+        double "LineParsers::International", attributes: { cost: 20, amount: 300 }
       end
 
       let :contexts do
-        Contexts.new transaction
-      end
-
-      it "instantiates a new International with the line attributes" do
-        international = double "Document::International"
-        allow(Document::International).to receive(:new) { international }
-
-        International.call line, contexts
-
-        expect(Document::International).to have_received(:new).with line.attributes
-      end
-
-      it "assigns the international instance to the transaction" do
-        international = double "Document::International"
-        allow(Document::International).to receive(:new) { international }
-
-        International.call line, contexts
-
-        expect(transaction.international).to be international
+        Contexts.new Document::Transaction.new
       end
 
       it "moves to the nearest transaction" do
         contexts.add Document::Sender.new
 
-        new_contexts = International.call line, contexts
+        c = International.call line, contexts
 
-        expect(new_contexts.current).to be transaction
+        expect(c.current).to be_a Document::Transaction
+      end
+
+      it "assigns the transaction a new International with the line's attributes" do
+        c = International.call line, contexts
+        international = c.current.international
+
+        expect(international).to be_a Document::International
+        expect(international.attributes).to eq line.attributes
       end
     end
   end

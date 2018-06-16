@@ -5,7 +5,11 @@ module TotalIn
   module LineProcessors
     RSpec.describe "AccountStart" do
       let :line do
-        double "Line", attributes: {}
+        double "LineParsers::AccountStart", attributes: {
+          account_number: "12345",
+          currency: "SEK",
+          date: Date.new
+        }
       end
 
       let :document do
@@ -21,29 +25,20 @@ module TotalIn
       end
 
       it "instantiates a new account with the line attributes" do
-        allow(Document::Account).to receive :new
+        c = AccountStart.call line, contexts
+        account = c.current
 
-        AccountStart.call line, contexts
-
-        expect(Document::Account).to have_received(:new).with line.attributes
+        expect(account).to be_a Document::Account
+        expect(account.attributes).to eq line.attributes
       end
 
       it "adds the account to the document" do
-        fake_account = double "Document::Account"
-        allow(Document::Account).to receive(:new) { fake_account }
+        expect(document.accounts).to be_empty
 
-        AccountStart.call line, contexts
+        c = AccountStart.call line, contexts
 
-        expect(document.accounts).to include fake_account
-      end
-
-      it "sets the account as the current context" do
-        fake_account = double "Document::Account"
-        allow(Document::Account).to receive(:new) { fake_account }
-
-        new_contexts = AccountStart.call line, contexts
-
-        expect(new_contexts.current).to be fake_account
+        expect(document.accounts.size).to eq 1
+        expect(document.accounts.first).to eq c.current
       end
     end
   end
