@@ -2,9 +2,9 @@ require "total_in/line_parsers"
 
 module TotalIn
   module LineParsers
-    RSpec.describe SenderAccount do
+    RSpec.describe SenderAccountStart do
       let :sender_account do
-        SenderAccount.new "6098765433                            29999999999                               "
+        SenderAccountStart.new "6098765433                            29999999999                               "
       end
 
       it "parses the account number" do

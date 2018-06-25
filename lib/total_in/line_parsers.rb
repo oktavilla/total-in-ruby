@@ -2,6 +2,7 @@ require "total_in/line_parser"
 
 module TotalIn
   module LineParsers
+
     class DocumentStart < LineParser
       field :id, 2..13
       field :created_at, 14..33, :time
@@ -52,9 +53,15 @@ module TotalIn
     end
 
     class Names < Values
+      def full_name
+        values.join(" ")
+      end
     end
 
     class Addresses < Values
+      def address
+        values.join(" ")
+      end
     end
 
     class Locality < LineParser
@@ -63,7 +70,7 @@ module TotalIn
       field :country_code, 46..47
     end
 
-    class SenderAccount < LineParser
+    class SenderAccountStart < LineParser
       field :account_number, 2..37
       field :origin_code, 38..38, :integer
       field :company_organization_number, 39..58
@@ -75,6 +82,29 @@ module TotalIn
       field :amount, 38..52, :integer
       field :amount_currency, 53..55
       field :exchange_rate, 56..67, :integer
+    end
+
+    PARSERS = {
+      document_start: DocumentStart,
+      account_start: AccountStart,
+      payment_start: PaymentStart,
+      deduction_start: DeductionStart,
+      reference_numbers: ReferenceNumbers,
+      messages: Messages,
+      sender_start: Names,
+      sender_address: Addresses,
+      sender_locality: Locality,
+      sender_account_start: SenderAccountStart,
+      sender_account_names: Names,
+      sender_account_address: Addresses,
+      sender_account_locality: Locality,
+      international: International,
+      account_end: AccountEnd,
+      document_end: DocumentEnd
+    }
+
+    def self.parser_for_type type
+      PARSERS.fetch(type)
     end
   end
 end
